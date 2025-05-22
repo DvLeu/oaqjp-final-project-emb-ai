@@ -8,11 +8,13 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/emotionDetector', methods=['POST'])
+@app.route('/emotionDetector', methods=['POST', 'GET'])
 def analyze_emotion():
-    text_to_analyze = request.form('textToAnalyze')
+    if request.method == 'POST' : 
+        text_to_analyze = request.form.get('textToAnalyze')
+    else :
+        text_to_analyze = request.args.get('textToAnalize')
     result = emotion_detector(text_to_analyze)
-    
     if "error" in result :
         return "Error" + result["error"]  
     
