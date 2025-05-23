@@ -1,49 +1,29 @@
-import requests
 import json
+import requests
 
-def emotion_detector(text_to_analyze):
-    url = "https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict"
-    headers = {
-        "Content-Type": "application/json",
-        "grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"
-    }
-    payload = {
-        "raw_document": {
-            "text": text_to_analyze
+def emotion_detector(text_to_analyse):
+    url = 'https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict'
+    header = {"grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"}
+    myobj = { "raw_document": { "text": text_to_analyse } }
+    response = requests.post(url, json=myobj, headers=header)
+    formatted_response = json.loads(response.text)
+    if response.status_code == 200:
+        emotion_dict = formatted_response['emotionPredictions'][0]['emotion']
+        end_response = {
+                    'anger': emotion_dict['anger'],
+                    'disgust': emotion_dict['disgust'],
+                    'fear': emotion_dict['fear'],
+                    'joy': emotion_dict['joy'],
+                    'sadness': emotion_dict['sadness'],
+                    'dominant_emotion': max(emotion_dict, key = emotion_dict.get)
         }
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-        response_json = json.loads(response.text)
-
-        emotion_scores = response_json['emotionPredictions'][0]['emotion']
-        anger = emotion_scores.get('anger', 0)
-        disgust = emotion_scores.get('disgust', 0)
-        fear = emotion_scores.get('fear', 0)
-        joy = emotion_scores.get('joy', 0)
-        sadness = emotion_scores.get('sadness', 0)
-
-        dominant_emotion = max(
-            {
-                'anger': anger,
-                'disgust': disgust,
-                'fear': fear,
-                'joy': joy,
-                'sadness': sadness
-            },
-            key=lambda k: emotion_scores[k]
-        )
-
-        return {
-            'anger': anger,
-            'disgust': disgust,
-            'fear': fear,
-            'joy': joy,
-            'sadness': sadness,
-            'dominant_emotion': dominant_emotion
+    elif response.status_code == 400:
+        end_response = {
+                    'anger': None,
+                    'disgust': None,
+                    'fear': None,
+                    'joy': None,
+                    'sadness': None,
+                    'dominant_emotion': None
         }
-
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+    return end_response
